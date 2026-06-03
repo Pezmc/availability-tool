@@ -124,7 +124,7 @@ describe('formatGrid', () => {
     expect(wedLine).toContain('·')
     expect(result).toContain('✓ free  ~ if need be')
     expect(result.startsWith('```\n')).toBe(true)
-    expect(result).toContain('```\n✓')
+    expect(result.endsWith('\n```')).toBe(true)
   })
 
   it('renders if-need-be as ~', () => {
