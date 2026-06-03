@@ -1,5 +1,5 @@
 import type { DayAvailability, SlotSelection, TimeOfDay } from '../types'
-import { formatDayLabel, parseLocalDate, weekOffset, getOrdinalSuffix } from '../utils/dates'
+import { parseLocalDate, weekOffset, getOrdinalSuffix } from '../utils/dates'
 
 const TIME_ORDER: TimeOfDay[] = ['morning', 'afternoon', 'evening']
 const STATUS_LABEL: Record<string, string> = {
