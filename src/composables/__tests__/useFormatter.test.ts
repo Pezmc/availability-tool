@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatAvailability, formatGrid, formatEmoji } from '../useFormatter'
+import { formatAvailability, formatGrid, formatEmoji, formatChat } from '../useFormatter'
 import type { DayAvailability } from '../../types'
 
 describe('formatAvailability (list)', () => {
@@ -233,5 +233,71 @@ describe('formatEmoji', () => {
     const result = formatEmoji(days)
     expect(result).toContain('Wed 3')
     expect(result).toContain('Fri 5')
+  })
+})
+
+describe('formatChat', () => {
+  it('returns empty string for no selections', () => {
+    expect(formatChat([])).toBe('')
+  })
+
+  it('formats a single day with one slot', () => {
+    const days: DayAvailability[] = [
+      { date: '2026-06-05', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
+    ]
+    expect(formatChat(days)).toBe("I'm free Friday evening")
+  })
+
+  it('formats a single day with all three slots as all day', () => {
+    const days: DayAvailability[] = [
+      {
+        date: '2026-06-11',
+        slots: [
+          { timeOfDay: 'morning', status: 'yes' },
+          { timeOfDay: 'afternoon', status: 'yes' },
+          { timeOfDay: 'evening', status: 'yes' },
+        ],
+      },
+    ]
+    expect(formatChat(days)).toBe("I'm free Thursday all day")
+  })
+
+  it('joins two days with and', () => {
+    const days: DayAvailability[] = [
+      { date: '2026-06-05', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
+      { date: '2026-06-07', slots: [{ timeOfDay: 'afternoon', status: 'yes' }] },
+    ]
+    expect(formatChat(days)).toBe("I'm free Friday evening and Sunday afternoon")
+  })
+
+  it('joins three+ days with commas and "and"', () => {
+    const days: DayAvailability[] = [
+      { date: '2026-06-03', slots: [{ timeOfDay: 'morning', status: 'yes' }] },
+      { date: '2026-06-05', slots: [{ timeOfDay: 'afternoon', status: 'yes' }] },
+      { date: '2026-06-11', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
+    ]
+    expect(formatChat(days)).toBe(
+      "I'm free Wednesday morning, Friday afternoon and Thursday evening"
+    )
+  })
+
+  it('handles if-need-be in parentheses', () => {
+    const days: DayAvailability[] = [
+      { date: '2026-06-08', slots: [{ timeOfDay: 'morning', status: 'if-need-be' }] },
+    ]
+    expect(formatChat(days)).toBe("I'm free Monday morning (if need be)")
+  })
+
+  it('handles multiple slots on one day naturally', () => {
+    const days: DayAvailability[] = [
+      {
+        date: '2026-06-05',
+        slots: [
+          { timeOfDay: 'afternoon', status: 'yes' },
+          { timeOfDay: 'evening', status: 'yes' },
+        ],
+      },
+    ]
+    expect(formatChat(days)).toBe("I'm free Friday afternoon and evening")
   })
 })

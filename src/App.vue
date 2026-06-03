@@ -4,7 +4,7 @@ import type { TimeOfDay } from './types'
 import type { OutputFormat } from './composables/useFormatter'
 import { useAvailability } from './composables/useAvailability'
 import { useClipboard } from './composables/useClipboard'
-import { formatAvailability, formatGrid, formatEmoji } from './composables/useFormatter'
+import { formatAvailability, formatGrid, formatEmoji, formatChat } from './composables/useFormatter'
 import DayRow from './components/DayRow.vue'
 
 const { days, toggleSlot, getSlot, clearAll, hasSelections } = useAvailability()
@@ -16,6 +16,7 @@ const formattedText = computed(() => {
   switch (outputFormat.value) {
     case 'grid': return formatGrid(days.value)
     case 'emoji': return formatEmoji(days.value)
+    case 'chat': return formatChat(days.value)
     default: return formatAvailability(days.value)
   }
 })
@@ -69,6 +70,11 @@ function handleCopy() {
           :class="{ 'toggle-btn--active': outputFormat === 'emoji' }"
           @click="outputFormat = 'emoji'"
         >Emoji</button>
+        <button
+          class="toggle-btn"
+          :class="{ 'toggle-btn--active': outputFormat === 'chat' }"
+          @click="outputFormat = 'chat'"
+        >Chat</button>
       </div>
       <div v-if="formattedText" class="preview">
         <pre class="preview__text">{{ formattedText }}</pre>

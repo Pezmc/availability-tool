@@ -119,4 +119,53 @@ export function formatEmoji(days: DayAvailability[]): string {
   return '```\n' + header + '\n' + rows.join('\n') + '\n' + legend + '\n```'
 }
 
-export type OutputFormat = 'list' | 'grid' | 'emoji'
+// Chat formatter: natural conversational sentence
+
+function chatDayName(date: Date): string {
+  return date.toLocaleDateString('en-GB', { weekday: 'long' })
+}
+
+function chatSlots(slots: SlotSelection[]): string {
+  const sorted = [...slots].sort(
+    (a, b) => TIME_ORDER.indexOf(a.timeOfDay) - TIME_ORDER.indexOf(b.timeOfDay)
+  )
+
+  if (sorted.length === 3 && sorted.every(s => s.status === sorted[0].status)) {
+    return sorted[0].status === 'if-need-be' ? 'all day (if need be)' : 'all day'
+  }
+
+  const parts = sorted.map(s => {
+    const name = s.timeOfDay
+    return s.status === 'if-need-be' ? `${name} (if need be)` : name
+  })
+
+  return joinNatural(parts)
+}
+
+function joinNatural(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? ''
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
+}
+
+export function formatChat(days: DayAvailability[]): string {
+  const activeDays = days
+    .filter(d => d.slots.length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  if (activeDays.length === 0) return ''
+
+  const parts = activeDays.map(day => {
+    const name = chatDayName(parseLocalDate(day.date))
+    const slots = chatSlots(day.slots)
+    return `${name} ${slots}`
+  })
+
+  if (parts.length === 1) {
+    return `I'm free ${parts[0]}`
+  }
+
+  return `I'm free ${joinNatural(parts)}`
+}
+
+export type OutputFormat = 'list' | 'grid' | 'emoji' | 'chat'
