@@ -78,22 +78,18 @@ export function formatGrid(days: DayAvailability[]): string {
   const { activeDays, labels, maxLabelWidth } = getActiveDays(days)
   if (activeDays.length === 0) return ''
 
-  // Fixed-width columns: label | Morning(9) | Afternoon(11) | Evening
   const gap = '  '
-  const mCol = 'Morning'.padEnd(9)
-  const aCol = 'Afternoon'.padEnd(11)
-  const eCol = 'Evening'
-  const header = ' '.repeat(maxLabelWidth) + gap + mCol + aCol + eCol
+  const header = ' '.repeat(maxLabelWidth) + gap + 'M  A  E'
 
   const rows = activeDays.map((day, i) => {
     const label = labels[i].padEnd(maxLabelWidth)
-    const m = gridSymbol(day.slots, 'morning').padEnd(9)
-    const a = gridSymbol(day.slots, 'afternoon').padEnd(11)
+    const m = gridSymbol(day.slots, 'morning')
+    const a = gridSymbol(day.slots, 'afternoon')
     const e = gridSymbol(day.slots, 'evening')
-    return `${label}${gap}${m}${a}${e}`
+    return `${label}${gap}${m}  ${a}  ${e}`
   })
 
-  const legend = '✓ free  ~ if need be'
+  const legend = '✓ free  ~ if need be\nM morning  A afternoon  E evening'
   return '```\n' + header + '\n' + rows.join('\n') + '\n' + legend + '\n```'
 }
 

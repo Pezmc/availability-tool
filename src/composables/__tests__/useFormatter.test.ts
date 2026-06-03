@@ -116,7 +116,7 @@ describe('formatGrid', () => {
       { date: '2026-06-03', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
     ]
     const result = formatGrid(days)
-    expect(result).toContain('Morning')
+    expect(result).toContain('M  A  E')
     expect(result).toContain('Wed 3')
     // Evening column has ✓, morning and afternoon have ·
     const wedLine = result.split('\n').find(l => l.includes('Wed 3'))!
