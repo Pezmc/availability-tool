@@ -102,18 +102,21 @@ function emojiSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
 }
 
 export function formatEmoji(days: DayAvailability[]): string {
-  const { activeDays, labels } = getActiveDays(days)
+  const { activeDays, labels, maxLabelWidth } = getActiveDays(days)
   if (activeDays.length === 0) return ''
 
+  const pad = ' '.repeat(maxLabelWidth + 2)
+  const header = `${pad}🌅☀️🌙`
   const rows = activeDays.map((day, i) => {
+    const label = labels[i].padEnd(maxLabelWidth)
     const m = emojiSymbol(day.slots, 'morning')
     const a = emojiSymbol(day.slots, 'afternoon')
     const e = emojiSymbol(day.slots, 'evening')
-    return `${labels[i]}  ${m}${a}${e}`
+    return `${label}  ${m}${a}${e}`
   })
 
   const legend = '🟩 free  🟧 if need be'
-  return rows.join('\n') + '\n' + legend
+  return '```\n' + header + '\n' + rows.join('\n') + '\n```\n' + legend
 }
 
 export type OutputFormat = 'list' | 'grid' | 'emoji'
