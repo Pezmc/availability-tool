@@ -50,6 +50,14 @@ const slots: { key: TimeOfDay; label: string }[] = [
   border-bottom: 1px solid var(--border-color, #f0f0f0);
 }
 
+@media (max-width: 440px) {
+  .day-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
 .day-row--today {
   background: var(--today-bg, rgba(59, 130, 246, 0.04));
   border-radius: 8px;
