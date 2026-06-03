@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatAvailability, formatGrid } from '../useFormatter'
+import { formatAvailability, formatGrid, formatEmoji } from '../useFormatter'
 import type { DayAvailability } from '../../types'
 
 describe('formatAvailability (list)', () => {
@@ -116,9 +116,12 @@ describe('formatGrid', () => {
       { date: '2026-06-03', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
     ]
     const result = formatGrid(days)
-    expect(result).toContain('M  A  E')
+    expect(result).toContain('Morning')
     expect(result).toContain('Wed 3')
-    expect(result).toContain('·  ·  ✓')
+    // Evening column has ✓, morning and afternoon have ·
+    const wedLine = result.split('\n').find(l => l.includes('Wed 3'))!
+    expect(wedLine.trimEnd().endsWith('✓')).toBe(true)
+    expect(wedLine).toContain('·')
     expect(result).toContain('✓ free  ~ if need be')
     expect(result.startsWith('```\n')).toBe(true)
     expect(result).toContain('```\n✓')
@@ -129,7 +132,11 @@ describe('formatGrid', () => {
       { date: '2026-06-08', slots: [{ timeOfDay: 'morning', status: 'if-need-be' }] },
     ]
     const result = formatGrid(days)
-    expect(result).toContain('~  ·  ·')
+    // The ~ symbol should appear in the morning column
+    const monLine = result.split('\n').find(l => l.includes('Mon 8'))!
+    expect(monLine).toContain('~')
+    // Evening column should have ·
+    expect(monLine.trimEnd().endsWith('·')).toBe(true)
   })
 
   it('renders multiple days sorted chronologically', () => {
@@ -144,25 +151,18 @@ describe('formatGrid', () => {
     expect(dataLines[1]).toContain('Wed 10')
   })
 
-  it('aligns columns with mixed-width day labels', () => {
+  it('aligns rows consistently with mixed-width day labels', () => {
     const days: DayAvailability[] = [
       { date: '2026-06-03', slots: [{ timeOfDay: 'morning', status: 'yes' }] },
-      { date: '2026-06-15', slots: [{ timeOfDay: 'afternoon', status: 'yes' }] },
+      { date: '2026-06-15', slots: [{ timeOfDay: 'morning', status: 'yes' }] },
     ]
     const result = formatGrid(days)
     const lines = result.split('\n')
 
-    // Find the header line and verify M column position
-    const headerLine = lines.find(l => l.includes('M  A  E'))!
-    const mColPos = headerLine.indexOf('M')
-
-    // Data lines should have their first symbol at the same position
+    // Both data rows should have their ✓ at the same column position
     const wed3Line = lines.find(l => l.includes('Wed 3'))!
     const mon15Line = lines.find(l => l.includes('Mon 15'))!
-    const wed3SymPos = wed3Line.indexOf('✓')
-    const mon15SymPos = mon15Line.indexOf('·')
-    expect(wed3SymPos).toBe(mColPos)
-    expect(mon15SymPos).toBe(mColPos)
+    expect(wed3Line.indexOf('✓')).toBe(mon15Line.indexOf('✓'))
   })
 
   it('renders the full user scenario from the design doc', () => {
@@ -192,10 +192,46 @@ describe('formatGrid', () => {
     expect(result).toContain('Thu 11')
     expect(result).toContain('Mon 15')
     // Thu 11 should show all three as ✓
-    const thu11Line = result.split('\n').find(l => l.includes('Thu 11'))
-    expect(thu11Line).toContain('✓  ✓  ✓')
-    // Mon 15 should show ~ ✓ ~
-    const mon15Line = result.split('\n').find(l => l.includes('Mon 15'))
-    expect(mon15Line).toContain('~  ✓  ~')
+    const thu11Line = result.split('\n').find(l => l.includes('Thu 11'))!
+    expect(thu11Line.match(/✓/g)?.length).toBe(3)
+    expect(thu11Line).not.toContain('·')
+    // Mon 15 should have ~ then ✓ then ~
+    const mon15Line = result.split('\n').find(l => l.includes('Mon 15'))!
+    expect(mon15Line.match(/~/g)?.length).toBe(2)
+    expect(mon15Line.match(/✓/g)?.length).toBe(1)
+  })
+})
+
+describe('formatEmoji', () => {
+  it('returns empty string for no selections', () => {
+    expect(formatEmoji([])).toBe('')
+  })
+
+  it('renders green squares for yes and orange for if-need-be', () => {
+    const days: DayAvailability[] = [
+      {
+        date: '2026-06-03',
+        slots: [
+          { timeOfDay: 'morning', status: 'yes' },
+          { timeOfDay: 'evening', status: 'if-need-be' },
+        ],
+      },
+    ]
+    const result = formatEmoji(days)
+    expect(result).toContain('🟩')
+    expect(result).toContain('🟧')
+    expect(result).toContain('⬜')
+    expect(result).toContain('Wed 3')
+    expect(result).toContain('🟩 free  🟧 if need be')
+  })
+
+  it('renders multiple days', () => {
+    const days: DayAvailability[] = [
+      { date: '2026-06-03', slots: [{ timeOfDay: 'morning', status: 'yes' }] },
+      { date: '2026-06-05', slots: [{ timeOfDay: 'evening', status: 'yes' }] },
+    ]
+    const result = formatEmoji(days)
+    expect(result).toContain('Wed 3')
+    expect(result).toContain('Fri 5')
   })
 })

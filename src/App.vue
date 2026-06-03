@@ -4,7 +4,7 @@ import type { TimeOfDay } from './types'
 import type { OutputFormat } from './composables/useFormatter'
 import { useAvailability } from './composables/useAvailability'
 import { useClipboard } from './composables/useClipboard'
-import { formatAvailability, formatGrid } from './composables/useFormatter'
+import { formatAvailability, formatGrid, formatEmoji } from './composables/useFormatter'
 import DayRow from './components/DayRow.vue'
 
 const { days, toggleSlot, getSlot, clearAll, hasSelections } = useAvailability()
@@ -13,10 +13,11 @@ const { copied, error, copyText } = useClipboard()
 const outputFormat = ref<OutputFormat>('grid')
 
 const formattedText = computed(() => {
-  if (outputFormat.value === 'grid') {
-    return formatGrid(days.value)
+  switch (outputFormat.value) {
+    case 'grid': return formatGrid(days.value)
+    case 'emoji': return formatEmoji(days.value)
+    default: return formatAvailability(days.value)
   }
-  return formatAvailability(days.value)
 })
 
 const canCopy = computed(() => hasSelections())
@@ -63,6 +64,11 @@ function handleCopy() {
           :class="{ 'toggle-btn--active': outputFormat === 'grid' }"
           @click="outputFormat = 'grid'"
         >Grid</button>
+        <button
+          class="toggle-btn"
+          :class="{ 'toggle-btn--active': outputFormat === 'emoji' }"
+          @click="outputFormat = 'emoji'"
+        >Emoji</button>
       </div>
       <div v-if="formattedText" class="preview">
         <pre class="preview__text">{{ formattedText }}</pre>

@@ -49,14 +49,7 @@ export function formatAvailability(days: DayAvailability[]): string {
   return `I have:\n${lines.join('\n')}`
 }
 
-// Grid formatter: compact monospace grid for WhatsApp/Telegram
-// Wrapped in triple backticks for monospace rendering
-
-function gridSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
-  const slot = slots.find(s => s.timeOfDay === timeOfDay)
-  if (!slot) return '·'
-  return slot.status === 'if-need-be' ? '~' : '✓'
-}
+// Shared helpers for grid formatters
 
 function shortDayLabel(date: Date): string {
   const day = date.getDate()
@@ -64,29 +57,63 @@ function shortDayLabel(date: Date): string {
   return `${weekday} ${day}`
 }
 
-export function formatGrid(days: DayAvailability[]): string {
+function getActiveDays(days: DayAvailability[]) {
   const activeDays = days
     .filter(d => d.slots.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
+  const labels = activeDays.map(day => shortDayLabel(parseLocalDate(day.date)))
+  const maxLabelWidth = Math.max(...labels.map(l => l.length), 0)
+  return { activeDays, labels, maxLabelWidth }
+}
 
+// Grid formatter: monospace text grid wrapped in backticks for WhatsApp/Telegram
+
+function gridSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
+  const slot = slots.find(s => s.timeOfDay === timeOfDay)
+  if (!slot) return '·'
+  return slot.status === 'if-need-be' ? '~' : '✓'
+}
+
+export function formatGrid(days: DayAvailability[]): string {
+  const { activeDays, labels, maxLabelWidth } = getActiveDays(days)
   if (activeDays.length === 0) return ''
 
-  // Find the widest day label for padding (e.g. "Wed 10" = 6, "Mon 8" = 5)
-  const labels = activeDays.map(day => shortDayLabel(parseLocalDate(day.date)))
-  const maxLabelWidth = Math.max(...labels.map(l => l.length))
-
-  const header = ' '.repeat(maxLabelWidth) + '   M  A  E'
+  const pad = ' '.repeat(maxLabelWidth)
+  const header = `${pad}   Morning  Afternoon  Evening`
   const rows = activeDays.map((day, i) => {
     const label = labels[i].padEnd(maxLabelWidth)
-    const m = gridSymbol(day.slots, 'morning')
-    const a = gridSymbol(day.slots, 'afternoon')
+    // Center symbols under header words: Morning(7ch), Afternoon(9ch), Evening(7ch)
+    const m = `   ${gridSymbol(day.slots, 'morning')}      `
+    const a = `${gridSymbol(day.slots, 'afternoon')}          `
     const e = gridSymbol(day.slots, 'evening')
-    return `${label}   ${m}  ${a}  ${e}`
+    return `${label}${m}${a}${e}`
   })
 
   const legend = '✓ free  ~ if need be'
-
   return '```\n' + header + '\n' + rows.join('\n') + '\n```\n' + legend
 }
 
-export type OutputFormat = 'list' | 'grid'
+// Emoji grid formatter: colored squares, no monospace needed
+
+function emojiSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
+  const slot = slots.find(s => s.timeOfDay === timeOfDay)
+  if (!slot) return '⬜'
+  return slot.status === 'if-need-be' ? '🟧' : '🟩'
+}
+
+export function formatEmoji(days: DayAvailability[]): string {
+  const { activeDays, labels } = getActiveDays(days)
+  if (activeDays.length === 0) return ''
+
+  const rows = activeDays.map((day, i) => {
+    const m = emojiSymbol(day.slots, 'morning')
+    const a = emojiSymbol(day.slots, 'afternoon')
+    const e = emojiSymbol(day.slots, 'evening')
+    return `${labels[i]}  ${m}${a}${e}`
+  })
+
+  const legend = '🟩 free  🟧 if need be'
+  return rows.join('\n') + '\n' + legend
+}
+
+export type OutputFormat = 'list' | 'grid' | 'emoji'
