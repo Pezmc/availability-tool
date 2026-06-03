@@ -23,7 +23,7 @@ function statusClass(status: Status | null): string {
     @click="$emit('toggle')"
   >
     <span class="chip__label">{{ label }}</span>
-    <span v-if="status === 'if-need-be'" class="chip__status">~</span>
+    <span class="chip__status" :class="{ 'chip__status--visible': status === 'if-need-be' }">~</span>
   </button>
 </template>
 
@@ -70,5 +70,10 @@ function statusClass(status: Status | null): string {
 .chip__status {
   font-weight: 700;
   font-size: 0.9rem;
+  visibility: hidden;
+}
+
+.chip__status--visible {
+  visibility: visible;
 }
 </style>
