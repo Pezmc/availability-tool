@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getOrdinalSuffix, formatDayLabel, formatCompactLabel, generateDateRange, parseLocalDate } from '../dates'
+import { getOrdinalSuffix, formatDayLabel, formatCompactLabel, generateDateRange, parseLocalDate, weekOffset } from '../dates'
 
 describe('getOrdinalSuffix', () => {
   it('returns st for 1, 21, 31', () => {
@@ -73,5 +73,33 @@ describe('generateDateRange', () => {
   it('handles year boundaries', () => {
     const range = generateDateRange('2026-12-30', 4)
     expect(range).toEqual(['2026-12-30', '2026-12-31', '2027-01-01', '2027-01-02'])
+  })
+})
+
+describe('weekOffset', () => {
+  // Today = Wednesday 2026-06-03. Week starts Monday.
+  // This week: Mon 1 - Sun 7
+  // Next week: Mon 8 - Sun 14
+  // Week after: Mon 15 - Sun 21
+  const today = '2026-06-03'
+
+  it('same week = 0', () => {
+    expect(weekOffset('2026-06-03', today)).toBe(0) // Wed (today)
+    expect(weekOffset('2026-06-01', today)).toBe(0) // Mon (start of week)
+    expect(weekOffset('2026-06-07', today)).toBe(0) // Sun (end of week)
+  })
+
+  it('next week = 1', () => {
+    expect(weekOffset('2026-06-08', today)).toBe(1) // Mon
+    expect(weekOffset('2026-06-14', today)).toBe(1) // Sun
+  })
+
+  it('week after = 2', () => {
+    expect(weekOffset('2026-06-15', today)).toBe(2)
+    expect(weekOffset('2026-06-21', today)).toBe(2)
+  })
+
+  it('3 weeks out = 3', () => {
+    expect(weekOffset('2026-06-22', today)).toBe(3)
   })
 })

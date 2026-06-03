@@ -1,5 +1,5 @@
 import type { DayAvailability, SlotSelection, TimeOfDay } from '../types'
-import { formatDayLabel, parseLocalDate } from '../utils/dates'
+import { formatDayLabel, parseLocalDate, weekOffset, getOrdinalSuffix } from '../utils/dates'
 
 const TIME_ORDER: TimeOfDay[] = ['morning', 'afternoon', 'evening']
 const STATUS_LABEL: Record<string, string> = {
@@ -28,6 +28,19 @@ function formatDaySlots(slots: SlotSelection[]): string {
   return sorted.map(slotLabel).join(' + ')
 }
 
+// Week-aware day label for list/chat formats
+// Week 0: "Wednesday" (no date)
+// Week 1: "Wednesday" (grouped under "Next week:")
+// Week 2+: "Wednesday 17th" (with date number)
+function weekAwareDayLabel(date: Date, week: number): string {
+  const dayName = date.toLocaleDateString('en-GB', { weekday: 'long' })
+  if (week <= 2) return dayName // this week, next week, week after: day name only
+  const day = date.getDate()
+  return `${dayName} ${day}${getOrdinalSuffix(day)}`
+}
+
+// List formatter with week grouping
+
 export function formatAvailability(days: DayAvailability[]): string {
   const activeDays = days
     .filter(d => d.slots.length > 0)
@@ -35,18 +48,47 @@ export function formatAvailability(days: DayAvailability[]): string {
 
   if (activeDays.length === 0) return ''
 
-  const lines = activeDays.map(day => {
+  const lines: string[] = []
+  let currentWeek = -1
+
+  for (const day of activeDays) {
     const date = parseLocalDate(day.date)
-    const label = formatDayLabel(date)
+    const week = weekOffset(day.date)
+    const label = weekAwareDayLabel(date, week)
     const slotsText = formatDaySlots(day.slots)
 
-    if (day.slots.length > 1) {
-      return `  - ${label}, ${slotsText}`
+    if (week !== currentWeek) {
+      if (week === 0 && currentWeek === -1) {
+        lines.push('I have:')
+      } else if (week === 0) {
+        // shouldn't happen (week goes forward), but safe fallback
+        lines.push('This week:')
+      } else if (week === 1) {
+        if (currentWeek === -1) lines.push('I have:')
+        lines.push('Next week:')
+      } else if (week === 2) {
+        if (currentWeek === -1) lines.push('I have:')
+        lines.push('Week after:')
+      } else {
+        if (currentWeek === -1) lines.push('I have:')
+        // No extra header for 3+ weeks, dates have numbers
+      }
+      currentWeek = week
     }
-    return `  - ${label} ${slotsText}`
-  })
 
-  return `I have:\n${lines.join('\n')}`
+    if (day.slots.length > 1) {
+      lines.push(`  - ${label}, ${slotsText}`)
+    } else {
+      lines.push(`  - ${label} ${slotsText}`)
+    }
+  }
+
+  // If we never hit week 0 (all dates are next week+), add "I have:" at the start
+  if (!lines[0]?.startsWith('I have:')) {
+    lines.unshift('I have:')
+  }
+
+  return lines.join('\n')
 }
 
 // Shared helpers for grid formatters
@@ -93,7 +135,7 @@ export function formatGrid(days: DayAvailability[]): string {
   return '```\n' + header + '\n' + rows.join('\n') + '\n' + legend + '\n```'
 }
 
-// Emoji grid formatter: colored squares, no monospace needed
+// Emoji grid formatter: colored squares
 
 function emojiSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
   const slot = slots.find(s => s.timeOfDay === timeOfDay)
@@ -119,11 +161,7 @@ export function formatEmoji(days: DayAvailability[]): string {
   return '```\n' + header + '\n' + rows.join('\n') + '\n' + legend + '\n```'
 }
 
-// Chat formatter: natural conversational sentence
-
-function chatDayName(date: Date): string {
-  return date.toLocaleDateString('en-GB', { weekday: 'long' })
-}
+// Chat formatter: natural conversational sentence with week awareness
 
 function chatSlots(slots: SlotSelection[]): string {
   const sorted = [...slots].sort(
@@ -155,17 +193,39 @@ export function formatChat(days: DayAvailability[]): string {
 
   if (activeDays.length === 0) return ''
 
-  const parts = activeDays.map(day => {
-    const name = chatDayName(parseLocalDate(day.date))
-    const slots = chatSlots(day.slots)
-    return `${name} ${slots}`
-  })
+  // Group by week
+  const weekGroups: { week: number; parts: string[] }[] = []
 
-  if (parts.length === 1) {
-    return `I'm free ${parts[0]}`
+  for (const day of activeDays) {
+    const date = parseLocalDate(day.date)
+    const week = weekOffset(day.date)
+    const label = weekAwareDayLabel(date, week)
+    const slots = chatSlots(day.slots)
+
+    let group = weekGroups.find(g => g.week === week)
+    if (!group) {
+      group = { week, parts: [] }
+      weekGroups.push(group)
+    }
+    group.parts.push(`${label} ${slots}`)
   }
 
-  return `I'm free ${joinNatural(parts)}`
+  // Build sentence with week prefixes
+  const segments: string[] = []
+  for (const group of weekGroups) {
+    const joined = joinNatural(group.parts)
+    if (group.week === 0) {
+      segments.push(joined)
+    } else if (group.week === 1) {
+      segments.push(`next week ${joined}`)
+    } else if (group.week === 2) {
+      segments.push(`week after ${joined}`)
+    } else {
+      segments.push(joined)
+    }
+  }
+
+  return `I'm free ${joinNatural(segments)}`
 }
 
 export type OutputFormat = 'list' | 'grid' | 'emoji' | 'chat'
