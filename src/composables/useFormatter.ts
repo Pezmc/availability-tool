@@ -4,7 +4,6 @@ import { formatDayLabel, parseLocalDate } from '../utils/dates'
 const TIME_ORDER: TimeOfDay[] = ['morning', 'afternoon', 'evening']
 const STATUS_LABEL: Record<string, string> = {
   'if-need-be': 'If need be',
-  'maybe': 'Maybe',
 }
 
 function slotLabel(slot: SlotSelection): string {
@@ -49,3 +48,45 @@ export function formatAvailability(days: DayAvailability[]): string {
 
   return `I have:\n${lines.join('\n')}`
 }
+
+// Grid formatter: compact monospace grid for WhatsApp/Telegram
+// Wrapped in triple backticks for monospace rendering
+
+function gridSymbol(slots: SlotSelection[], timeOfDay: TimeOfDay): string {
+  const slot = slots.find(s => s.timeOfDay === timeOfDay)
+  if (!slot) return '·'
+  return slot.status === 'if-need-be' ? '~' : '✓'
+}
+
+function shortDayLabel(date: Date): string {
+  const day = date.getDate()
+  const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' })
+  return `${weekday} ${day}`
+}
+
+export function formatGrid(days: DayAvailability[]): string {
+  const activeDays = days
+    .filter(d => d.slots.length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  if (activeDays.length === 0) return ''
+
+  // Find the widest day label for padding (e.g. "Wed 10" = 6, "Mon 8" = 5)
+  const labels = activeDays.map(day => shortDayLabel(parseLocalDate(day.date)))
+  const maxLabelWidth = Math.max(...labels.map(l => l.length))
+
+  const header = ' '.repeat(maxLabelWidth) + '   M  A  E'
+  const rows = activeDays.map((day, i) => {
+    const label = labels[i].padEnd(maxLabelWidth)
+    const m = gridSymbol(day.slots, 'morning')
+    const a = gridSymbol(day.slots, 'afternoon')
+    const e = gridSymbol(day.slots, 'evening')
+    return `${label}   ${m}  ${a}  ${e}`
+  })
+
+  const legend = '✓ free  ~ if need be'
+
+  return '```\n' + header + '\n' + rows.join('\n') + '\n```\n' + legend
+}
+
+export type OutputFormat = 'list' | 'grid'

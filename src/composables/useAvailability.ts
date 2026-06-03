@@ -5,7 +5,7 @@ import { todayDateString, generateDateRange } from '../utils/dates'
 const STORAGE_KEY = 'availability-state'
 const DAYS_TO_SHOW = 21
 
-const STATUS_CYCLE: (Status | 'off')[] = ['yes', 'if-need-be', 'maybe', 'off']
+const STATUS_CYCLE: (Status | 'off')[] = ['yes', 'if-need-be', 'off']
 
 function loadState(): AvailabilityState | null {
   try {

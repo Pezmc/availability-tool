@@ -24,7 +24,6 @@ function statusClass(status: Status | null): string {
   >
     <span class="chip__label">{{ label }}</span>
     <span v-if="status === 'if-need-be'" class="chip__status">~</span>
-    <span v-else-if="status === 'maybe'" class="chip__status">?</span>
   </button>
 </template>
 
@@ -66,11 +65,6 @@ function statusClass(status: Status | null): string {
 .chip--if-need-be {
   background: var(--color-ifneedbe, #f59e0b);
   border-color: var(--color-ifneedbe, #f59e0b);
-}
-
-.chip--maybe {
-  background: var(--color-maybe, #3b82f6);
-  border-color: var(--color-maybe, #3b82f6);
 }
 
 .chip__status {

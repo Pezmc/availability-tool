@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { TimeOfDay } from './types'
+import type { OutputFormat } from './composables/useFormatter'
 import { useAvailability } from './composables/useAvailability'
 import { useClipboard } from './composables/useClipboard'
-import { formatAvailability } from './composables/useFormatter'
+import { formatAvailability, formatGrid } from './composables/useFormatter'
 import DayRow from './components/DayRow.vue'
 
 const { days, toggleSlot, getSlot, clearAll, hasSelections } = useAvailability()
 const { copied, error, copyText } = useClipboard()
 
-const formattedText = computed(() => formatAvailability(days.value))
+const outputFormat = ref<OutputFormat>('grid')
+
+const formattedText = computed(() => {
+  if (outputFormat.value === 'grid') {
+    return formatGrid(days.value)
+  }
+  return formatAvailability(days.value)
+})
+
 const canCopy = computed(() => hasSelections())
 
 function handleCopy() {
@@ -43,6 +52,18 @@ function handleCopy() {
     </main>
 
     <footer class="footer">
+      <div v-if="canCopy" class="format-toggle">
+        <button
+          class="toggle-btn"
+          :class="{ 'toggle-btn--active': outputFormat === 'list' }"
+          @click="outputFormat = 'list'"
+        >List</button>
+        <button
+          class="toggle-btn"
+          :class="{ 'toggle-btn--active': outputFormat === 'grid' }"
+          @click="outputFormat = 'grid'"
+        >Grid</button>
+      </div>
       <div v-if="formattedText" class="preview">
         <pre class="preview__text">{{ formattedText }}</pre>
       </div>
@@ -68,7 +89,6 @@ function handleCopy() {
   --today-bg: rgba(59, 130, 246, 0.04);
   --color-yes: #22c55e;
   --color-ifneedbe: #f59e0b;
-  --color-maybe: #3b82f6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -100,7 +120,7 @@ body {
   max-width: 480px;
   margin: 0 auto;
   padding: 16px;
-  padding-bottom: 200px;
+  padding-bottom: 220px;
 }
 
 .header {
@@ -122,15 +142,6 @@ body {
   flex-direction: column;
 }
 
-.preview__text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  color: var(--text-primary);
-  margin: 0;
-}
-
 .footer {
   position: fixed;
   bottom: 0;
@@ -147,6 +158,31 @@ body {
   z-index: 10;
 }
 
+.format-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-btn--active {
+  background: var(--text-primary);
+  color: var(--bg-color);
+}
+
 .preview {
   width: 100%;
   max-width: 480px;
@@ -156,6 +192,15 @@ body {
   border: 1px solid var(--border-color);
   max-height: 120px;
   overflow-y: auto;
+}
+
+.preview__text {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .btn {

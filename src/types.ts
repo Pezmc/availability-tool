@@ -1,5 +1,5 @@
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening'
-export type Status = 'yes' | 'if-need-be' | 'maybe'
+export type Status = 'yes' | 'if-need-be'
 
 export interface SlotSelection {
   timeOfDay: TimeOfDay
