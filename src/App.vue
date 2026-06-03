@@ -42,11 +42,10 @@ function handleCopy() {
       />
     </main>
 
-    <div v-if="formattedText" class="preview">
-      <pre class="preview__text">{{ formattedText }}</pre>
-    </div>
-
     <footer class="footer">
+      <div v-if="formattedText" class="preview">
+        <pre class="preview__text">{{ formattedText }}</pre>
+      </div>
       <button
         class="btn btn--primary"
         :disabled="!canCopy"
@@ -101,7 +100,7 @@ body {
   max-width: 480px;
   margin: 0 auto;
   padding: 16px;
-  padding-bottom: 100px;
+  padding-bottom: 200px;
 }
 
 .header {
@@ -123,20 +122,13 @@ body {
   flex-direction: column;
 }
 
-.preview {
-  margin-top: 24px;
-  padding: 16px;
-  background: var(--today-bg);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-}
-
 .preview__text {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  line-height: 1.5;
   white-space: pre-wrap;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .footer {
@@ -144,11 +136,26 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16px;
+  padding: 12px 16px;
   background: var(--bg-color);
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  z-index: 10;
+}
+
+.preview {
+  width: 100%;
+  max-width: 480px;
+  padding: 10px 14px;
+  background: var(--today-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .btn {
